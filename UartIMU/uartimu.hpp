@@ -35,7 +35,9 @@ public:
     }
     void on_receive_imu(drivers::packet_data_t *packet_ptr, drivers::packet_length_t len);
     void on_receive_sts(drivers::packet_data_t *packet_ptr, drivers::packet_length_t len);
-    void transmit_cmd(uint8_t reach_cross_flag_,uint8_t reach_destination_flag_,float trace_center_error_,float trace_angle_deg_);
+    void transmit_cmd(uint8_t q3_status_,
+    int x_error_,
+    int y_error_);
     void get_attitude(Attitude &attitude)
     {
         attitude = m_attitude;

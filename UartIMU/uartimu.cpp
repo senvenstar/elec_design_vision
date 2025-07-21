@@ -59,13 +59,14 @@ void UartIMU::on_receive_sts(drivers::packet_data_t* packet_ptr, drivers::packet
     }
 }
 
-void UartIMU::transmit_cmd(uint8_t reach_cross_flag_,uint8_t reach_destination_flag_,float trace_center_error_,float trace_angle_deg_)
+void UartIMU::transmit_cmd(uint8_t q3_status_,
+    int x_error_,
+    int y_error_)
 {
     advv_detection_t data_to_send;
-    data_to_send.reach_cross_flag = reach_cross_flag_;
-    data_to_send.reach_destination_flag = reach_destination_flag_;
-    data_to_send.trace_center_error = trace_center_error_;
-    data_to_send.trace_angle_deg = trace_angle_deg_;
+    data_to_send.q3_status = q3_status_;
+    data_to_send.x_error = x_error_;
+    data_to_send.y_error = y_error_;
     
     m_serial.send(GIMAdvv_CMD_ID, (drivers::packet_data_t*)&data_to_send, sizeof(data_to_send));
 }

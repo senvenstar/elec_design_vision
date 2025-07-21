@@ -9,10 +9,9 @@
 #define GIMAdvv_CMD_ID 0x0503
 typedef struct __attribute__((packed))
 {
-    uint8_t reach_cross_flag;
-    uint8_t reach_destination_flag;
-    float trace_center_error;
-    float trace_angle_deg;
+    uint8_t q3_status;
+    int x_error;
+    int y_error;
 } advv_detection_t;
 
 
