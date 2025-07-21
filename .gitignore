@@ -1,0 +1,11 @@
+.vscode/
+MvSdkLog/
+build/
+data/
+log/
+*.cache
+bash/auto-aim-start.sh
+frames/
+kf_test/
+state.txt
+test_video/

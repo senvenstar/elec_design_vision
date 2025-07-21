@@ -1,0 +1,113 @@
+
+#include <Eigen/Dense>
+#include <functional>
+
+namespace predict
+{
+    template <int V_Z = 4, int V_X = 9>
+    class ExtendedKalman
+    {
+    public:
+        using Matrix_zzd = Eigen::Matrix<double, V_Z, V_Z>;
+        using Matrix_xxd = Eigen::Matrix<double, V_X, V_X>;
+        using Matrix_zxd = Eigen::Matrix<double, V_Z, V_X>;
+        using Matrix_xzd = Eigen::Matrix<double, V_X, V_Z>;
+        using Matrix_x1d = Eigen::Matrix<double, V_X, 1>;
+        using Matrix_z1d = Eigen::Matrix<double, V_Z, 1>;
+
+        using Func_x1d_x1d = std::function<Matrix_x1d(const Matrix_x1d &)>;
+        using Func_z1d_x1d = std::function<Matrix_z1d(const Matrix_x1d &)>;
+        using Func_zxd_x1d = std::function<Matrix_zxd(const Matrix_x1d &)>;
+        using Func_xxd_x1d = std::function<Matrix_xxd(const Matrix_x1d &)>;
+        using Func_zzd_z1d = std::function<Matrix_zzd(const Matrix_z1d &)>;
+
+    private:
+        Func_x1d_x1d f;
+        Func_z1d_x1d h;
+        Func_xxd_x1d calculate_F;
+        Matrix_xxd F;
+        Func_zxd_x1d calculate_H;
+        Matrix_zxd H;
+
+        Func_xxd_x1d update_Q;
+        Matrix_xxd Q;
+        Func_zzd_z1d update_R;
+        Matrix_zzd R;
+
+        Matrix_xxd P_pri;
+        Matrix_xxd P_post;
+
+        Matrix_xzd K;
+
+        Matrix_xxd I;
+
+        Matrix_x1d X_pri;
+        Matrix_x1d X_post;
+
+    public:
+        ExtendedKalman() = default;
+
+        ExtendedKalman(const Func_x1d_x1d &f_, const Func_z1d_x1d &h_,
+                       const Func_xxd_x1d &cal_F_, const Func_zxd_x1d cal_H_,
+                       const Func_xxd_x1d &update_Q_, const Func_zzd_z1d &update_R_,
+                       const Matrix_xxd &P0, const Matrix_x1d &X0)
+        : f(f_), h(h_), calculate_F(cal_F_), calculate_H(cal_H_), update_Q(update_Q_),
+            update_R(update_R_), P_post(P0), X_post(X0), I(Matrix_xxd::Identity())
+        {}
+        
+        void reset(const Matrix_x1d &X0) 
+        {
+            X_post = X0;
+        }
+
+        void reset(const Func_x1d_x1d &f_, const Func_z1d_x1d &h_,
+            const Func_xxd_x1d &cal_F_, const Func_zxd_x1d cal_H_,
+            const Func_xxd_x1d &update_Q_, const Func_zzd_z1d &update_R_,
+            const Matrix_xxd &P0, const Matrix_x1d &X0) 
+        {
+            f = f_;
+            h = h_;
+            calculate_F = cal_F_;
+            calculate_H = cal_H_;
+            update_Q = update_Q_;
+            update_R = update_R_;
+            P_post = P0;
+            X_post = X0;
+        }
+
+        void reset(const int &index, const double value)
+        {
+            X_post(index, 0) = value;
+        }
+
+        Matrix_x1d predict()
+        {
+            F = calculate_F(X_post);
+            Q = update_Q(X_post);
+
+            X_pri = f(X_post);
+            P_pri = F * P_post * F.transpose() + Q;
+
+            X_post = X_pri;
+            P_post = P_pri;
+
+            return X_pri;
+        }
+
+        Matrix_x1d update(const Matrix_z1d &Z)
+        {
+            H = calculate_H(X_pri);
+            R = update_R(Z);
+
+            K = P_pri * H.transpose() * (H * P_pri * H.transpose() + R).inverse();
+            X_post = X_pri + K * (Z - h(X_pri));
+            P_post = (I - K * H) * P_pri;
+            // std::cout << P_post << std::endl;
+
+            return X_post;
+        }
+    };
+}
+
+#endif /* _EXTENDED_KALMAN_HPP_ */
+
