@@ -6,7 +6,7 @@
  *
  * @note  包含角度信息和供预测的角速度信息
  */
-#define GIMAdvv_CMD_ID 0x0503
+#define GIMAdvv_CMD_ID 0x1026
 typedef struct __attribute__((packed))
 {
     uint8_t q3_status;
@@ -30,13 +30,10 @@ typedef struct __attribute__((packed))
  * @brief IMU位姿数据
  * 
  */
-#define CMD_MCU_DATA 0x1021
+#define CMD_MCU_DATA 0x1027
 typedef struct __attribute__((packed))
 {
-    float curr_yaw;   //绝对量 yaw顺时针为正
-    float curr_pitch; // pit水平为0 向上为负
-    float shoot_speed;
-    uint8_t autoaim_mode; // 1 if robot enter auto aim mode, 0 otherwise
+    uint8_t start_track_flag;
 } pc_mcu_data_t;
 
 /**

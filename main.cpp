@@ -9,8 +9,8 @@ std::chrono::high_resolution_clock::time_point last_tp;
 
 int binary_threshold = 128;
 int rect_size_threshold = 200;
-int trace_point_num_for_long_edge = 15;
-int trace_point_num_for_short_edge = 13;
+int trace_point_num_for_long_edge = 10;
+int trace_point_num_for_short_edge = 6;
 
 int red_upper_l = 255;
 int red_upper_a = 255;
@@ -19,10 +19,10 @@ int red_lower_l = 0;
 int red_lower_a = 151;
 int red_lower_b = 96;
 
-int same_point_threshold = 5;
+int same_point_threshold = 8;
 
 
-int q3_status = 0;
+int q3_status = 100;
 
 // 比较 Point 的 y 坐标
 bool compareY(const Point& a, const Point& b) {
@@ -201,6 +201,8 @@ int main(void)
     Attitude attitude;
     RobotStatus robotstatus;
 
+    pc_mcu_data_t mcu_data;
+
     // 定义 ROI 的位置和大小（x, y, width, height）
     // cv::Rect tracking_roi_rect1(150, 140, 340, 40);
 
@@ -226,6 +228,9 @@ int main(void)
     int x_error = 0;
     int y_error = 0;
 
+    bool temp=false;
+
+    bool last_key_pressed = false;
 
     while (true) {
         // get picture
@@ -245,7 +250,7 @@ int main(void)
         }
 
         if (imu != nullptr)
-            // imu->start();
+            imu->start();
 
         if (is_image_input_flipped)
         {
@@ -254,11 +259,9 @@ int main(void)
 
 
 
-
-
         // proceed picture
-        if (q3_status == -1) {
-            if (attitude.yaw) {
+        if (q3_status == 100) {
+            if (mcu_data.start_track_flag == (uint8_t)1) {
                 q3_status = 0;
             }
         }
@@ -376,6 +379,8 @@ int main(void)
                         cout << "sorted_trace_corners" << sorted_trace_corners << endl;
 
                         trace_points = getOrderedEdgePoints(sorted_trace_corners);
+
+                        trace_points.push_back(trace_points[0]);
                     }
                 }
                 else {
@@ -452,11 +457,21 @@ int main(void)
             vector<vector<Point>> contours;
             findContours(mask, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
 
-            Point2f centroid;
+            Point centroid;
+            Point target;
 
-            if (contours.size() > 0) {
+            vector<Point> filtered_contour;
+
+            for (auto contour : contours) {
+                if (contourArea(contour) > 1) {
+                    filtered_contour = contour;
+                }
+            }
+
+
+            if (filtered_contour.size() > 0) {
                 // 1. 计算矩
-                Moments m = moments(contours[0]);
+                Moments m = moments(filtered_contour);
 
                 // 2. 计算质心坐标
                 if (m.m00 != 0) {
@@ -464,28 +479,56 @@ int main(void)
                     centroid.y = m.m01 / m.m00;
                 }
 
+                if (centroid.x == 0) {
+                    temp = true;
+                }
+
                 // 3. 打印结果
                 cout << "current coordinate: (" << centroid.x << ", " << centroid.y << ")" << endl;   
+
+                target = trace_points[track_step];
+
+                if (track_step < (trace_point_num_for_long_edge + trace_point_num_for_short_edge)*2) {
+                    if (norm(centroid - target) < same_point_threshold) {
+                        track_step++;
+                    }
+                }
+                else if (track_step == (trace_point_num_for_long_edge + trace_point_num_for_short_edge)*2){
+                    if (norm(centroid - target) < 3) {
+                        track_step++;
+                    }
+                }
+                
+
+                // 检测按键
+                // char key = static_cast<char>(cv::waitKey(1));
+                // if (key == ' ' && last_key_pressed == false) {
+                //     track_step++;
+                //     last_key_pressed = true;
+                // }
+
+                // if (key != ' ') {
+                //     last_key_pressed = false;
+                // }
+
+                if (track_step < (trace_point_num_for_long_edge + trace_point_num_for_short_edge)*2+1) {
+                    target = trace_points[track_step];
+                }
+                else {
+                    q3_status = 2;
+                }
+
+                x_error = target.x - centroid.x;
+                y_error = target.y - centroid.y;
             }
             else {
                 cout << "no red point" << endl;
+
+                x_error = 0;
+                y_error = 0;
             }
 
-            Point2f target = trace_points[track_step];
-
-            if (norm(centroid - target) < same_point_threshold) {
-                track_step++;
-            }
-
-            if (track_step < (trace_point_num_for_long_edge + trace_point_num_for_short_edge)*2) {
-                target = trace_points[track_step];
-            }
-            else {
-                q3_status = 2;
-            }
-
-            x_error = target.x - centroid.x;
-            y_error = target.y - centroid.y;
+            
 
 
             if (display["predic_show"]) {
@@ -501,7 +544,11 @@ int main(void)
 
         }
         
-
+        // 检查是否需要停止程序
+        // if (temp == true) {
+        //     std::cout << "Stopping the program." << std::endl;
+        //     break; // 退出循环，从而结束程序
+        // }
         
 
 
@@ -539,8 +586,7 @@ int main(void)
 
         if (imu != nullptr)
         {
-            // imu->get_attitude(attitude);
-            // imu->get_robotstatus(robotstatus);
+            mcu_data.start_track_flag = imu->mcu_data.start_track_flag;
         }
 
         last_tp = tp;

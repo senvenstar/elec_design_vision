@@ -7,6 +7,7 @@
 #include <RMCVSerial/RMCVSerial.hpp>
 #include <stdint.h>
 #include <string>
+#include "packet.hpp"
 
 class UartIMU
 {
@@ -16,7 +17,11 @@ private:
     const std::string m_device_name;
     drivers::RMCVSerial m_serial;
 
+    
+
 public:
+    pc_mcu_data_t mcu_data;
+
     UartIMU(const std::string device_name);
     bool init()
     {

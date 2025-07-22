@@ -1,5 +1,4 @@
 #include "uartimu.hpp"
-#include "packet.hpp"
 #include <functional>
 #include <chrono>
 
@@ -14,14 +13,8 @@ void UartIMU::on_receive_imu(drivers::packet_data_t* packet_ptr, drivers::packet
 {
     if (len != sizeof(pc_mcu_data_t))
         LOGM_S("[UART][ERROR] invalid data length");
-    pc_mcu_data_t* _tmp_ptr = (pc_mcu_data_t*)packet_ptr;
-    m_attitude.yaw = _tmp_ptr->curr_yaw;
-    m_attitude.pitch = _tmp_ptr->curr_pitch;
-    m_robotstatus.robot_speed_mps = _tmp_ptr->shoot_speed;
-    if (_tmp_ptr->shoot_speed < 10.0f) {
-        m_robotstatus.robot_speed_mps = 10.0f;
-    }
-    m_robotstatus.program_mode = (ProgramMode)_tmp_ptr->autoaim_mode;
+    pc_mcu_data_t _tmp_ptr = *((pc_mcu_data_t*)packet_ptr);
+    mcu_data.start_track_flag = _tmp_ptr.start_track_flag;
 }
 
 void UartIMU::on_receive_sts(drivers::packet_data_t* packet_ptr, drivers::packet_length_t len)
