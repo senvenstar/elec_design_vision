@@ -133,6 +133,10 @@ vector<Point> getOrderedEdgePoints(const vector<Point>& corners) {
 
 int main(void)
 {
+    wiringPiSetup();    // 初始化
+    
+    key_board_init();
+
     // init
     cmd_parser parser;
     map<string, string> info;
@@ -230,19 +234,40 @@ int main(void)
 
     bool temp=false;
 
-    bool last_key_pressed = false;
+    bool last_pressed = false;
+    std::chrono::high_resolution_clock::time_point last_pressed_tp;
 
     while (true) {
+        std::chrono::high_resolution_clock::time_point tp = std::chrono::high_resolution_clock::now();
+
+        cout << "dt: " << std::chrono::duration_cast<std::chrono::microseconds>(tp - last_tp).count() / 1e6 << endl;
+
+        // if (key_pressed_down(K1, tp)) {
+        //     cout << "pressed" << endl;
+        // }
+
+        // key_update_last_pressed(tp);
+
+        // int sw_status = get_switch_status(SW2);
+        // if (sw_status == SW_A_ON) {
+        //     cout << "A" << endl;
+        // }
+        // else if (sw_status == SW_B_ON) {
+        //     cout << "B" << endl;
+        // }
+        // else if (sw_status == SW_MID) {
+        //     cout << "mid" << endl;
+        // }
+        // else {
+        //     cout << "error" << endl;
+        // }
+
         // get picture
         cap >> frame;
 
         totalFrameCounter++;
 
         // std::cout << totalFrameCounter << std::endl;
-
-        std::chrono::high_resolution_clock::time_point tp = std::chrono::high_resolution_clock::now();
-
-        cout << "dt: " << std::chrono::duration_cast<std::chrono::microseconds>(tp - last_tp).count() / 1e6 << endl;
 
         if (frame.empty()) {
             LOGW_S("empty image");

@@ -28,9 +28,12 @@
 
 //submodules
 #include "UartIMU/uartimu.hpp"
+#include "KeyBoard/key_board.hpp"
 
 //modules
 #include "common.hpp"
+
+#include <wiringPi.h>
 
 
 

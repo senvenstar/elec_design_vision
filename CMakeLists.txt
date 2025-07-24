@@ -29,10 +29,12 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 include_directories(${EIGEN3_INCLUDE_DIR})
 
 aux_source_directory(UartIMU uartimu_src)
+aux_source_directory(KeyBoard key_board_src)
 
 include_directories(${PROJECT_SOURCE_DIR}/UartIMU)
+include_directories(${PROJECT_SOURCE_DIR}/KeyBoard)
 
-add_executable(${exe_name} main.cpp ${uartimu_src})
+add_executable(${exe_name} main.cpp ${uartimu_src} ${key_board_src})
 
 include_directories(common)
 
@@ -41,6 +43,6 @@ add_subdirectory(common)
 target_link_libraries(${exe_name} common)
 
 # ADD_LIBRARY(${exe_name} OBJECT ${uartimu_src})
-target_link_libraries(${exe_name} ${OpenCV_LIBS} RMCVSerial)
+target_link_libraries(${exe_name} ${OpenCV_LIBS} RMCVSerial wiringPi wiringPiDev)
 
 
