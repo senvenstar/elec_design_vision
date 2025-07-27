@@ -7,6 +7,20 @@ int totalFrameCounter = 0;
 
 std::chrono::high_resolution_clock::time_point last_tp;
 
+uint8_t imageData[LCD_W*LCD_H*2];
+
+// 相机内参矩阵 K（根据你的标定结果填写）
+cv::Mat K = (cv::Mat_<double>(3, 3) << 
+    1.44521186e+03, 0.00000000e+00, 5.33904882e+02,
+    0.00000000e+00, 1.44396638e+03, 3.28810013e+02,
+    0.00000000e+00, 0.00000000e+00, 1.00000000e+00);
+
+// 畸变系数 D（k1, k2, p1, p2, k3）
+cv::Mat D = (cv::Mat_<double>(5, 1) << 
+    2.11194249e-01, -1.30918347e+00,  3.39484720e-04, -1.36706102e-03,
+  1.50127996e+00);
+
+
 int binary_threshold = 128;
 int rect_size_threshold = 200;
 int trace_point_num_for_long_edge = 10;
@@ -136,6 +150,7 @@ int main(void)
     wiringPiSetup();    // 初始化
     
     key_board_init();
+    lcd_init();
 
     // init
     cmd_parser parser;
@@ -158,8 +173,9 @@ int main(void)
     LOGM_S("[sensor] comm I/O on %s", info["port"].c_str());
     LOGM_S("[sensor] video input from %s", info["source"].c_str());
 
-    cv::VideoCapture cap(0, cv::CAP_V4L2);
-
+    // cv::VideoCapture cap(0);
+    cv::VideoCapture cap("v4l2src device=/dev/video0 ! image/jpeg,width=1024,height=768,framerate=30/1 ! jpegdec ! videoconvert ! appsink", cv::CAP_GSTREAMER);
+    
     if (!cap.isOpened()) {
         std::cerr << "ERROR: Could not open camera." << std::endl;
         return -1;
@@ -262,8 +278,41 @@ int main(void)
         //     cout << "error" << endl;
         // }
 
+        // LCD_Fill2(0,0,LCD_W,LCD_H,WHITE);
+
         // get picture
         cap >> frame;
+
+        //  // 去畸变
+        // cv::Mat undistorted;
+        // cv::undistort(frame, undistorted, K, D);
+
+        // cv::imshow("Camera Feed", frame);
+        // cv::imshow("undistorted", undistorted);
+        // cv::waitKey(1);
+
+        // // lcd screen
+        // cv::Mat resizedImage;
+        // cv::resize(frame, resizedImage, cv::Size(LCD_W, LCD_H),cv::INTER_CUBIC);
+        // //转换为RGB565格式
+        // cv::Mat rgb565Image;
+        // cv::cvtColor(resizedImage, rgb565Image, cv::COLOR_BGR2BGR565);
+        // // 获取图像的宽度和高度
+        // int width = rgb565Image.cols;
+        // int height = rgb565Image.rows;
+        // for (int y = 0; y < height; y++) {
+        //     for (int x = 0; x < width; x++) {
+        //         // 获取RGB565值
+        //         uint16_t rgb565Value = rgb565Image.at<uint16_t>(y, x);
+        //         // 分开高位和低位，并写入数组
+        //         uint8_t highByte = (rgb565Value >> 8) & 0xFF;
+        //         uint8_t lowByte = rgb565Value & 0xFF;
+        //         imageData[(y * width + x) * 2]=highByte;
+        //         imageData[(y * width + x) * 2 + 1]=lowByte;
+        //     }
+        // }
+
+        // LCD_ShowPicture2(0,0,LCD_W,LCD_H,imageData);
 
         totalFrameCounter++;
 

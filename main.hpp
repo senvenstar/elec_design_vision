@@ -29,6 +29,10 @@
 //submodules
 #include "UartIMU/uartimu.hpp"
 #include "KeyBoard/key_board.hpp"
+#include "LcdScreen/LcdScreen.hpp"
+#include "LcdScreen/LcdDraw.hpp"
+#include "LcdScreen/LcdFont.hpp"
+#include "LcdScreen/LcdPic.hpp"
 
 //modules
 #include "common.hpp"
