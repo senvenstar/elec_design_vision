@@ -11,6 +11,8 @@ uint8_t imageData[LCD_W*LCD_H*2];
 
 // 相机内参矩阵 K（根据你的标定结果填写）
 cv::Mat K = (cv::Mat_<double>(3, 3) << 
+// 1494.9652739751343, 0., 545.49000798201666, 0.,
+//        1492.608717203751, 284.0360900113107, 0., 0., 1. );
     1.44521186e+03, 0.00000000e+00, 5.33904882e+02,
     0.00000000e+00, 1.44396638e+03, 3.28810013e+02,
     0.00000000e+00, 0.00000000e+00, 1.00000000e+00);
@@ -23,30 +25,32 @@ double cy = 3.28810013e+02;
 
 // 畸变系数 D（k1, k2, p1, p2, k3）
 cv::Mat D = (cv::Mat_<double>(5, 1) << 
+// 0.26604936129673196, 0.47179796018346121,
+//        -0.016486107122791711, 0.0052136984496752633, -20.487307696693595);
     2.11194249e-01, -1.30918347e+00,  3.39484720e-04, -1.36706102e-03,
   1.50127996e+00);
 
-std::vector<cv::Point3f> target_corners = {cv::Point3f(-0.01305 , -0.0087, 0),
-                                            cv::Point3f(0.01305 , -0.0087, 0),
-                                            cv::Point3f(0.01305 , 0.0087, 0),
-                                            cv::Point3f(-0.01305 , 0.0087, 0)};  // 左上，右上，右下，左下
+std::vector<cv::Point3f> target_corners = {cv::Point3f(-0.1305 , -0.087, 0),
+                                            cv::Point3f(0.1305 , -0.087, 0),
+                                            cv::Point3f(0.1305 , 0.087, 0),
+                                            cv::Point3f(-0.1305 , 0.087, 0)};  // 左上，右上，右下，左下
 
 
-Mat R_cl = (Mat_<double>(3, 3) <<
+// Mat T_cl = (Mat_<double>(4, 4) <<
+//     0., 0.99998880984645311, 0.0047307696915413252,
+//        -0.0021108089090053489, -0.99968391069552576,
+//        -0.00011893711021631255, 0.025140893986964841,
+//        0.03179592560066942, 0.025141175320577025, -0.0047292743458398978,
+//        0.99967272407906682, -0.00078965067758551832, 0., 0., 0., 1. 
+// );
+
+Mat T_cl = (Mat_<double>(4, 4) <<
     1, 0, 0,
-    0, 1, 0,
-    0, 0, 1
+       0, 0,
+       1, 0,
+       0, 0, 0,
+       1, 0, 0., 0., 0., 1.
 );
-
-// int rad = 353; // 584;
-
-// int t_y = -30+500;
-// int t_z = 30+500;
-
-int rad = 0;
-
-int t_y = 500;
-int t_z = 500;
 
 
 // int binary_threshold = 128;
@@ -74,6 +78,8 @@ int purple_lower_a = 151;
 int purple_lower_b = 96;
 
 int rect_size_threshold = 5000;
+
+int pitch_deg = 1023;
 
 int mode = 1;
 int step = 0;
@@ -146,6 +152,7 @@ vector<Point2f> orderPointsClockwise(vector<Point> points) {
 
     return orderedPoints;
 }
+
 
 int main(void)
 {
@@ -235,17 +242,14 @@ int main(void)
     createTrackbar("upper_green_h", "trackbar", &upper_green_h, 255, NULL);
     createTrackbar("upper_green_s", "trackbar", &upper_green_s, 255, NULL);
     createTrackbar("upper_green_v", "trackbar", &upper_green_v, 255, NULL);
-    createTrackbar("t_y", "trackbar", &t_y, 1000, NULL);
-    createTrackbar("t_z", "trackbar", &t_z, 1000, NULL);
     createTrackbar("purple_upper_l", "trackbar", &purple_upper_l, 255, NULL);
     createTrackbar("purple_upper_a", "trackbar", &purple_upper_a, 255, NULL);
     createTrackbar("purple_upper_b", "trackbar", &purple_upper_b, 255, NULL);
     createTrackbar("purple_lower_l", "trackbar", &purple_lower_l, 255, NULL);
     createTrackbar("purple_lower_a", "trackbar", &purple_lower_a, 255, NULL);
     createTrackbar("purple_lower_b", "trackbar", &purple_lower_b, 255, NULL);
-    createTrackbar("rad", "trackbar", &rad, 2000, NULL);
     // createTrackbar("rect_size_threshold", "trackbar", &rect_size_threshold, 4000, NULL);
-
+    createTrackbar("pitch_deg", "trackbar", &pitch_deg, 2000, NULL);
 
 
 
@@ -451,17 +455,20 @@ int main(void)
                 circle(frame, p, 5, Scalar(0, 0, 255), -1);           // 红色实心圆
 
                 cout << "project: " << p << endl;
+
             }
             else if (mode == 1) {
+                cout << step << endl;
+
                 cv::Point3f circle_target_on_plane;
                 circle_target_on_plane.x = radius * cos(angleStep*step);
                 circle_target_on_plane.y = radius * sin(angleStep*step);
                 circle_target_on_plane.z = 0;
 
-                std::vector<cv::Point3f> circle_target_corners = {cv::Point3f(-0.01305 , -0.0087, 0) - circle_target_on_plane,
-                                            cv::Point3f(0.01305 , -0.0087, 0) - circle_target_on_plane,
-                                            cv::Point3f(0.01305 , 0.0087, 0) - circle_target_on_plane,
-                                            cv::Point3f(-0.01305 , 0.0087, 0) - circle_target_on_plane};  // 左上，右上，右下，左下
+                std::vector<cv::Point3f> circle_target_corners = {cv::Point3f(-0.1305 , -0.087, 0) - circle_target_on_plane,
+                                            cv::Point3f(0.1305 , -0.087, 0) - circle_target_on_plane,
+                                            cv::Point3f(0.1305 , 0.087, 0) - circle_target_on_plane,
+                                            cv::Point3f(-0.1305 , 0.087, 0) - circle_target_on_plane};  // 左上，右上，右下，左下
 
                 cv::solvePnP(circle_target_corners, img_corners, K, D, rvec, tvec, false, cv::SOLVEPNP_IPPE);
 
@@ -481,23 +488,23 @@ int main(void)
                 cout << "project: " << p << endl;
             }
             
+            double rad = (pitch_deg-1000)/1000.0f;
 
-            float pitch_bias = (rad - 1000) / 1000.0f;
-            R_cl = (cv::Mat_<double>(3,3) <<
-                1,              0,               0,
-                0,  cos(pitch_bias), -sin(pitch_bias),
-                0,  sin(pitch_bias),  cos(pitch_bias));
-            Mat t_cl = (Mat_<double>(3, 1) << 0.00, (t_y-500)/1000.0f, (t_z-500)/1000.0f);
+            T_cl = (Mat_<double>(4, 4) << 1, 0, 0, 0,
+                                            0, cos(rad), -sin(rad), -0.030,
+                                            0, sin(rad), cos(rad), 0.030,
+                                            0, 0, 0, 1);
+            
 
-            Mat P_c = tvec.clone();
-            Mat P_l = R_cl * P_c + t_cl;
+            Mat P_c = (Mat_<double>(4, 1) << tvec.at<double>(0), tvec.at<double>(1), tvec.at<double>(2), 1);
+            Mat P_l = T_cl * P_c;
 
             cout << "目标点在激光坐标系中的位置 P_l: " << P_l.t() << endl;
 
             Vec3d target_laser(P_l.at<double>(0), P_l.at<double>(1), P_l.at<double>(2));
 
             if (mode == 1) {
-                if (sqrt(pow(target_laser(0), 2) + pow(target_laser(0), 2)) < same_point_threshold/1000.0f) {
+                if (sqrt(pow(target_laser(0), 2) + pow(target_laser(0), 2)) < same_point_threshold/10000.0f) {
                     step++;
                 }
             }
@@ -507,6 +514,7 @@ int main(void)
             pitch = atan2(target_laser[1], target_laser[2])/M_PI*180.0f;
 
             cout << "yaw: " << yaw << "pitch: " << pitch << endl;
+
         }
         else {
             cout << "no rect" << endl;
@@ -523,7 +531,7 @@ int main(void)
         }
 
 
-        circle(frame, cv::Point(533, 328), 5, Scalar(0, 0, 255), -1);
+        circle(frame, cv::Point(K.at<double>(0, 2), K.at<double>(1, 2)), 5, Scalar(0, 0, 255), -1);
 
 
         
