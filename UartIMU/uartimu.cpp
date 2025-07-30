@@ -52,14 +52,14 @@ void UartIMU::on_receive_sts(drivers::packet_data_t* packet_ptr, drivers::packet
     }
 }
 
-void UartIMU::transmit_cmd(uint8_t q3_status_,
-    int x_error_,
-    int y_error_)
+void UartIMU::transmit_cmd(uint8_t valid_,
+    float yaw_error_,
+    float pitch_error_)
 {
     advv_detection_t data_to_send;
-    data_to_send.q3_status = q3_status_;
-    data_to_send.x_error = x_error_;
-    data_to_send.y_error = y_error_;
+    data_to_send.valid = valid_;
+    data_to_send.yaw_error = yaw_error_;
+    data_to_send.pitch_error = pitch_error_;
     
     m_serial.send(GIMAdvv_CMD_ID, (drivers::packet_data_t*)&data_to_send, sizeof(data_to_send));
 }

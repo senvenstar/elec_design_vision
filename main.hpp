@@ -5,6 +5,7 @@
 #include <opencv2/dnn.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/calib3d/calib3d.hpp>
+#include <opencv2/aruco.hpp>
 //Std
 #include <vector>
 #include <fstream>
@@ -22,6 +23,7 @@
 #include <condition_variable>
 #include <chrono>
 #include <iostream>
+#include <cmath>
 
 //Common
 #include "common.hpp"

@@ -40,9 +40,9 @@ public:
     }
     void on_receive_imu(drivers::packet_data_t *packet_ptr, drivers::packet_length_t len);
     void on_receive_sts(drivers::packet_data_t *packet_ptr, drivers::packet_length_t len);
-    void transmit_cmd(uint8_t q3_status_,
-    int x_error_,
-    int y_error_);
+    void transmit_cmd(uint8_t valid_,
+    float yaw_error_,
+    float pitch_error_);
     void get_attitude(Attitude &attitude)
     {
         attitude = m_attitude;

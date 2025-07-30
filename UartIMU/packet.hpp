@@ -9,9 +9,9 @@
 #define GIMAdvv_CMD_ID 0x1026
 typedef struct __attribute__((packed))
 {
-    uint8_t q3_status;
-    int x_error;
-    int y_error;
+    uint8_t valid;
+    float yaw_error;
+    float pitch_error;
 } advv_detection_t;
 
 
