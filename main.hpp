@@ -35,6 +35,7 @@
 #include "LcdScreen/LcdDraw.hpp"
 #include "LcdScreen/LcdFont.hpp"
 #include "LcdScreen/LcdPic.hpp"
+#include "kalman.h"
 
 //modules
 #include "common.hpp"

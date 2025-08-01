@@ -14,7 +14,9 @@ void UartIMU::on_receive_imu(drivers::packet_data_t* packet_ptr, drivers::packet
     if (len != sizeof(pc_mcu_data_t))
         LOGM_S("[UART][ERROR] invalid data length");
     pc_mcu_data_t _tmp_ptr = *((pc_mcu_data_t*)packet_ptr);
-    mcu_data.start_track_flag = _tmp_ptr.start_track_flag;
+    mcu_data.cur_yaw = _tmp_ptr.cur_yaw;
+    mcu_data.cur_pitch = _tmp_ptr.cur_pitch;
+
 }
 
 void UartIMU::on_receive_sts(drivers::packet_data_t* packet_ptr, drivers::packet_length_t len)
@@ -54,12 +56,16 @@ void UartIMU::on_receive_sts(drivers::packet_data_t* packet_ptr, drivers::packet
 
 void UartIMU::transmit_cmd(uint8_t valid_,
     float yaw_error_,
-    float pitch_error_)
+    float pitch_error_,
+    float yaw_speed_,
+    float pitch_speed_)
 {
     advv_detection_t data_to_send;
     data_to_send.valid = valid_;
     data_to_send.yaw_error = yaw_error_;
     data_to_send.pitch_error = pitch_error_;
+    data_to_send.yaw_speed = yaw_speed_;
+    data_to_send.pitch_speed = pitch_speed_;
     
     m_serial.send(GIMAdvv_CMD_ID, (drivers::packet_data_t*)&data_to_send, sizeof(data_to_send));
 }

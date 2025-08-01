@@ -12,6 +12,8 @@ typedef struct __attribute__((packed))
     uint8_t valid;
     float yaw_error;
     float pitch_error;
+    float yaw_speed;
+    float pitch_speed;
 } advv_detection_t;
 
 
@@ -33,7 +35,8 @@ typedef struct __attribute__((packed))
 #define CMD_MCU_DATA 0x1027
 typedef struct __attribute__((packed))
 {
-    uint8_t start_track_flag;
+    float cur_yaw;
+    float cur_pitch;
 } pc_mcu_data_t;
 
 /**
@@ -62,4 +65,4 @@ typedef struct __attribute__((packed))
     uint8_t robot_id;
 } robot_data_t;
 
-#endif //SENOSR_IMU_UARTIMU_PACKET_H
+#endif //SENOSR_IMU_UARTIMU_PACKET_

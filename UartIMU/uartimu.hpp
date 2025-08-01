@@ -42,7 +42,9 @@ public:
     void on_receive_sts(drivers::packet_data_t *packet_ptr, drivers::packet_length_t len);
     void transmit_cmd(uint8_t valid_,
     float yaw_error_,
-    float pitch_error_);
+    float pitch_error_,
+    float yaw_speed_,
+    float pitch_speed_);
     void get_attitude(Attitude &attitude)
     {
         attitude = m_attitude;
