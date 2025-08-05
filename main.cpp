@@ -22,19 +22,12 @@ uint8_t imageData[LCD_W*LCD_H*2];
 
 // 相机内参矩阵 K（根据你的标定结果填写）
 cv::Mat K = (cv::Mat_<double>(3, 3) << 
-    // 1.44521186e+03, 0.00000000e+00, 5.33904882e+02,
-    // 0.00000000e+00, 1.44396638e+03, 3.28810013e+02,
-    // 0.00000000e+00, 0.00000000e+00, 1.00000000e+00);
-
     1.41551675e+03, 0.00000000e+00, 5.21014820e+02,
     0.00000000e+00, 1.41327590e+03, 3.25974100e+02,
     0.00000000e+00, 0.00000000e+00, 1.00000000e+00);
 
 // 畸变系数 D（k1, k2, p1, p2, k3）
 cv::Mat D = (cv::Mat_<double>(5, 1) << 
-//     2.11194249e-01, -1.30918347e+00,  3.39484720e-04, -1.36706102e-03,
-//   1.50127996e+00);
-
   2.45758770e-01, -1.62955334e+00,  3.25746049e-04, -1.04823290e-03,
   2.15842987e+00);
 
@@ -42,25 +35,6 @@ std::vector<cv::Point3f> target_corners = {cv::Point3f(-0.1305 , -0.087, 0),
                                             cv::Point3f(0.1305 , -0.087, 0),
                                             cv::Point3f(0.1305 , 0.087, 0),
                                             cv::Point3f(-0.1305 , 0.087, 0)};  // 左上，右上，右下，左下
-
-std::vector<cv::Point3f> two_rect_target_corners = {cv::Point3f(-0.1305 , -0.087, 0),
-                                            cv::Point3f(0.1305 , -0.087, 0),
-                                            cv::Point3f(0.1305 , 0.087, 0),
-                                            cv::Point3f(-0.1305 , 0.087, 0),
-                                            cv::Point3f(-0.1485 , -0.105, 0),
-                                            cv::Point3f(0.1485 , -0.105, 0),
-                                            cv::Point3f(0.1485 , 0.105, 0),
-                                            cv::Point3f(-0.1485 , 0.105, 0)};  // 左上，右上，右下，左下
-
-
-// Mat T_cl = (Mat_<double>(4, 4) <<
-//     0., 9.9992705418350314e-01, 1.2078340610415808e-02,
-//        2.3820959096292813e-02, -9.9999618897324494e-01,
-//        -3.3345931638808607e-05, 2.7606026579383310e-03,
-//        9.4282454524722923e-03, 2.7608040470437304e-03,
-//        -1.2078294579536585e-02, 9.9992324343474659e-01,
-//        -3.1376938094740403e-04, 0., 0., 0., 1. 
-// );
 
 Mat T_cl = (Mat_<double>(4, 4) <<
     1, 0, 0,
@@ -70,34 +44,17 @@ Mat T_cl = (Mat_<double>(4, 4) <<
        1, 0, 0., 0., 0., 1.
 );
 
-
-// int binary_threshold = 128;
-
-// 定义绿色范围（HSV 范围）
+// 定义黑色范围（HSV 范围）
 int lower_green_h = 0;
 int lower_green_s = 0;
 int lower_green_v = 0;
-int upper_green_h = 125;
+int upper_green_h = 92;
 int upper_green_s = 255;
 int upper_green_v = 255;
 
-int red_upper_l = 255;
-int red_upper_a = 255;
-int red_upper_b = 200;
-int red_lower_l = 0;
-int red_lower_a = 151;
-int red_lower_b = 96;
-
-int purple_upper_l = 255;
-int purple_upper_a = 255;
-int purple_upper_b = 200;
-int purple_lower_l = 0;
-int purple_lower_a = 151;
-int purple_lower_b = 96;
-
 int rect_size_threshold = 5000;
 
-int pitch_deg = 1010;
+int pitch_deg = 997;
 int yaw_deg = 992;
 
 int same_point_threshold = 100;
@@ -111,22 +68,17 @@ int center_roi_area = 40000;
 int whiteThreshold = 202; // 定义“偏白色”的亮度阈值 (0-255), 200 是一个较高的值
 int whiteRatioThreshold = 7; // 定义“大部分”的比例阈值, 例如 70%
 
-int shoot_threshold = 3;
 float yaw_arrive_threshold = 0.5;
 float pitch_arrive_threshold = 0.5;
-
-int measurement_variable = 1;
-int process_coord_variable = 200;
-int process_speed_variable = 60;
 
 // 使用自适应阈值方法（均值法）
 int blockSize = 11; // 邻域大小
 int C = 2;          // 常数，从计算出的均值或加权均值中减去
 
-int comm_latency_int = 40; // m秒
-float process_latency = 0;
-int p_coord = 90;
+int comm_latency_int = 30; // m秒
+int p_coord = 60;
 
+float process_latency = 0;
 
 int mode = 0;
 int step = 0;
@@ -137,8 +89,6 @@ float angleStep = 0.1f;       // 角度步长（弧度）
 
 bool last_key_pressed = false;
 
-int shoot_detect_frame = 0;
-
 _filter filter_x; // x轴滤波
 _filter filter_y; // y轴滤波
 _filter filter_z; // z轴滤波
@@ -147,10 +97,17 @@ bool last_track = false;
 
 uint8_t valid = 0;
 
-Matx1 last_px;
-Matx1 last_py;
-Matx1 last_pz;
+float mode1_rotating_yaw = 0;
+int mode1_rotating_dir = 1;
+std::chrono::high_resolution_clock::time_point mode1_last_rotating_tp = 0;
+float mode1_pitch = 16.48f;
 
+std::chrono::high_resolution_clock::time_point mode3_last_tp = 0;
+float mode3_total_time = 18.0f;
+
+// 定义路径矩形
+cv::Rect pathRect(-0.0725f, -0.0525f, 0.145f, 0.105f); // x=100, y=50, w=200, h=150
+int totalInterpolationPoints = 60; // 总共生成100个插值点
 
 // 比较 Point 的 y 坐标
 bool compareY(const Point2f& a, const Point2f& b) {
@@ -213,6 +170,80 @@ vector<Point2f> orderPointsClockwise(vector<Point> points) {
     }
 
     return orderedPoints;
+}
+
+cv::Point3d calculateTargetPointByIndex(int step, const cv::Rect& rect, int totalPoints) {
+    // 1. 参数检查
+    if (totalPoints <= 0) {
+        std::cerr << "Error: totalPoints must be positive." << std::endl;
+        return cv::Point3d(0, 0, 0);
+    }
+    if (rect.width <= 0 || rect.height <= 0) {
+        std::cerr << "Error: Rectangle width and height must be positive." << std::endl;
+        return cv::Point3d(0, 0, 0);
+    }
+
+    // 2. 计算矩形周长
+    double width = static_cast<double>(rect.width);
+    double height = static_cast<double>(rect.height);
+    double totalLength = 2.0 * (width + height);
+
+    // 3. 将插值点序号 'step' 映射到路径的等效弧长位置
+    //    step=0 对应弧长 0.0
+    //    step=totalPoints-1 对应弧长 totalLength - (totalLength / totalPoints) (或近似 totalLength)
+    //    为了循环和均匀分布，我们使用: arcLength = (step * totalLength) / totalPoints
+    //    这样 step=totalPoints 时会回到起点 (arcLength = totalLength)，实现无缝循环
+    double arcLength = (static_cast<double>(step) * totalLength) / static_cast<double>(totalPoints);
+
+    // 4. 归一化弧长 (使其在 [0, totalLength) 范围内循环，处理 step >= totalPoints 或负数)
+    //    fmod 可能产生负余数，需要调整
+    arcLength = std::fmod(arcLength, totalLength);
+    if (arcLength < 0) {
+        arcLength += totalLength;
+    }
+
+    // 5. 定义矩形四个角点 (pnp坐标系)
+    double x1 = static_cast<double>(rect.x);
+    double y1 = static_cast<double>(rect.y);
+    double x2 = x1 + width;
+    double y2 = y1 + height;
+
+    // 6. 根据等效弧长确定当前所在的边和位置
+    cv::Point3d targetPoint;
+
+    // ---- 上边 (从左上角 x1,y1 到右上角 x2,y1) ----
+    if (arcLength < width) {
+        targetPoint.x = x1 + arcLength; // x 从 x1 增加到 x2
+        targetPoint.y = y1;             // y 保持为 y1
+        targetPoint.z = 0.0;            // z 坐标
+    }
+    // ---- 左边 (从左上角 x1,y1 到左下角 x1,y2) ----
+    else if (arcLength < width + height) {
+        double distOnEdge = arcLength - width; // 在左边上的距离
+        targetPoint.x = x1;                     // x 保持为 x1
+        targetPoint.y = y1 + distOnEdge;        // y 从 y1 增加到 y2
+        targetPoint.z = 0.0;
+    }
+    // ---- 下边 (从左下角 x1,y2 到右上角 x2,y2) ----
+    else if (arcLength < width + height + width) {
+        double distOnEdge = arcLength - (width + height); // 在下边上的距离
+        targetPoint.x = x2 - distOnEdge; // x 从 x2 减少到 x1 (逆时针)
+        targetPoint.y = y2;              // y 保持为 y2
+        targetPoint.z = 0.0;
+    }
+    // ---- 右边 (从右下角 x2,y2 到右上角 x2,y1) ----
+    else { // arcLength < totalLength
+        double distOnEdge = arcLength - (width + height + width); // 在右边上的距离
+        targetPoint.x = x2;                         // x 保持为 x2
+        targetPoint.y = y2 - distOnEdge;            // y 从 y2 减少到 y1 (逆时针)
+        targetPoint.z = 0.0;
+    }
+
+    // 如果需要整数坐标，可以在这里转换 (但通常插值点可以是浮点)
+    // targetPoint.x = std::round(targetPoint.x);
+    // targetPoint.y = std::round(targetPoint.y);
+
+    return targetPoint;
 }
 
 
@@ -292,37 +323,36 @@ int main(void)
     // 定义 ROI 的位置和大小（x, y, width, height）
     // cv::Rect tracking_roi_rect1(150, 140, 340, 40);
 
+    bool debug = display["predic_debug"];
+    bool show = display["predic_show"];
 
-    // 创建窗口
-    namedWindow("trackbar", WINDOW_AUTOSIZE);
+    if (show) {
+        // 创建窗口
+        namedWindow("trackbar", WINDOW_AUTOSIZE);
 
-    // 创建滑动条
-    // createTrackbar("binary_threshold", "trackbar", &binary_threshold, 255, NULL);
-    createTrackbar("lower_green_h", "trackbar", &lower_green_h, 255, NULL);
-    // createTrackbar("lower_green_s", "trackbar", &lower_green_s, 255, NULL);
-    // createTrackbar("lower_green_v", "trackbar", &lower_green_v, 255, NULL);
-    createTrackbar("upper_green_h", "trackbar", &upper_green_h, 255, NULL);
-    // createTrackbar("upper_green_s", "trackbar", &upper_green_s, 255, NULL);
-    // createTrackbar("upper_green_v", "trackbar", &upper_green_v, 255, NULL);
-    createTrackbar("rect_size_threshold", "trackbar", &rect_size_threshold, 4000, NULL);
-    createTrackbar("pitch_deg", "trackbar", &pitch_deg, 2000, NULL);
-    createTrackbar("yaw_deg", "trackbar", &yaw_deg, 2000, NULL);
-    createTrackbar("same_center_threshold", "trackbar", &same_center_threshold, 100, NULL);
-    createTrackbar("lw_ratio_lower", "trackbar", &lw_ratio_lower, 50, NULL);
-    createTrackbar("lw_ratio_upper", "trackbar", &lw_ratio_upper, 50, NULL);
-    createTrackbar("center_roi_area", "trackbar", &center_roi_area, 100000, NULL);
-    createTrackbar("whiteThreshold", "trackbar", &whiteThreshold, 255, NULL);
-    createTrackbar("whiteRatioThreshold", "trackbar", &whiteRatioThreshold, 10, NULL);
-    // createTrackbar("measurement_variable", "trackbar", &measurement_variable, 1000, NULL);
-    // createTrackbar("process_coord_variable", "trackbar", &process_coord_variable, 1000, NULL);
-    // createTrackbar("process_speed_variable", "trackbar", &process_speed_variable, 1000, NULL);
-    // createTrackbar("blockSize", "trackbar", &blockSize, 100, NULL);
-    // createTrackbar("C", "trackbar", &C, 100, NULL);
-    createTrackbar("comm_latency_int", "trackbar", &comm_latency_int, 1000, NULL);
-    createTrackbar("p_coord", "trackbar", &p_coord, 10000, NULL);
-
-
-
+        // 创建滑动条
+        // createTrackbar("binary_threshold", "trackbar", &binary_threshold, 255, NULL);
+        // createTrackbar("lower_green_h", "trackbar", &lower_green_h, 255, NULL);
+        // createTrackbar("lower_green_s", "trackbar", &lower_green_s, 255, NULL);
+        // createTrackbar("lower_green_v", "trackbar", &lower_green_v, 255, NULL);
+        createTrackbar("upper_green_h", "trackbar", &upper_green_h, 255, NULL);
+        createTrackbar("upper_green_s", "trackbar", &upper_green_s, 255, NULL);
+        createTrackbar("upper_green_v", "trackbar", &upper_green_v, 255, NULL);
+        createTrackbar("rect_size_threshold", "trackbar", &rect_size_threshold, 4000, NULL);
+        createTrackbar("pitch_deg", "trackbar", &pitch_deg, 2000, NULL);
+        createTrackbar("yaw_deg", "trackbar", &yaw_deg, 2000, NULL);
+        createTrackbar("same_center_threshold", "trackbar", &same_center_threshold, 100, NULL);
+        createTrackbar("lw_ratio_lower", "trackbar", &lw_ratio_lower, 50, NULL);
+        createTrackbar("lw_ratio_upper", "trackbar", &lw_ratio_upper, 50, NULL);
+        createTrackbar("center_roi_area", "trackbar", &center_roi_area, 100000, NULL);
+        createTrackbar("whiteThreshold", "trackbar", &whiteThreshold, 255, NULL);
+        createTrackbar("whiteRatioThreshold", "trackbar", &whiteRatioThreshold, 10, NULL);
+        // createTrackbar("blockSize", "trackbar", &blockSize, 100, NULL);
+        // createTrackbar("C", "trackbar", &C, 100, NULL);
+        createTrackbar("comm_latency_int", "trackbar", &comm_latency_int, 1000, NULL);
+        createTrackbar("p_coord", "trackbar", &p_coord, 10000, NULL);
+    }
+    
     ///初始化滤波器参数
     Matxx A = Matxx::Identity(); //转移矩阵
     Matzx H;                     //观测矩阵
@@ -339,7 +369,7 @@ int main(void)
     filter_y = _filter(A, H, R, Q, init, std::chrono::high_resolution_clock::now());
     filter_z = _filter(A, H, R, Q, init, std::chrono::high_resolution_clock::now());
 
-    bool debug = display["predic_debug"];
+
 
     while (true) {
         std::chrono::high_resolution_clock::time_point tp = std::chrono::high_resolution_clock::now();
@@ -438,7 +468,7 @@ int main(void)
         cv::Scalar lower_green(lower_green_h, lower_green_s, lower_green_v);
         cv::Scalar upper_green(upper_green_h, upper_green_s, upper_green_v);
 
-        // 提取绿色区域
+        // 提取黑色区域
         cv::Mat mask;
         cv::inRange(lab, lower_green, upper_green, mask);
 
@@ -625,6 +655,7 @@ int main(void)
                             cv::Mat mask;
                             cv::threshold(grayRoi, mask, whiteThreshold, 255, cv::THRESH_BINARY_INV); // 大于阈值的设为 255，否则 0
 
+                            if (show)
                             imshow("center_roi", mask);
                             
                             int whitePixels = cv::countNonZero(mask); // 统计非零像素（即“偏白色”像素）的数量
@@ -697,7 +728,7 @@ int main(void)
 
             cv::Mat rvec, tvec;
 
-            if (mode == 0) {
+            if (mode == 0 || mode == 1 || mode == 2) {
                 cv::solvePnP(target_corners, img_corners, K, D, rvec, tvec, false, cv::SOLVEPNP_IPPE);
 
                 if (debug)
@@ -712,13 +743,13 @@ int main(void)
 
                 // 7. 在图像上画出投影点
                 Point2f p = projectedPoints[0];
-                circle(frame, p, 1, Scalar(0, 0, 255), -1);           // 红色实心圆
+                circle(frame, p, 5, Scalar(0, 0, 255), -1);           // 红色实心圆
 
                 if (debug)
                 cout << "project: " << p << endl;
 
             }
-            else if (mode == 1) {
+            else if (mode == 3) {
                 if (debug)
                 cout << step << endl;
 
@@ -746,7 +777,37 @@ int main(void)
 
                 // 7. 在图像上画出投影点
                 Point2f p = projectedPoints[0];
-                circle(frame, p, 1, Scalar(0, 0, 255), -1);           // 红色实心圆
+                circle(frame, p, 5, Scalar(0, 0, 255), -1);           // 红色实心圆
+
+                if (debug)
+                cout << "project: " << p << endl;
+            }
+            else if (mode == 4) {
+                if (debug)
+                cout << step << endl;
+                
+                cv::Point3d currentTarget = calculateTargetPointByIndex(step, pathRect, totalInterpolationPoints);
+
+                std::vector<cv::Point3f> rect_target_corners = {cv::Point3f(-0.1305 , -0.087, 0) - currentTarget,
+                                            cv::Point3f(0.1305 , -0.087, 0) - currentTarget,
+                                            cv::Point3f(0.1305 , 0.087, 0) - currentTarget,
+                                            cv::Point3f(-0.1305 , 0.087, 0) - currentTarget};  // 左上，右上，右下，左下
+
+                cv::solvePnP(rect_target_corners, img_corners, K, D, rvec, tvec, false, cv::SOLVEPNP_IPPE);
+
+                if (debug)
+                cout << "目标点相机坐标系中的位置 P_l: " << tvec.t() << endl;
+
+                // 6. 将世界坐标系原点 (0,0,0) 投影回图像（这正是 tvec 对应的点）
+                vector<Point3f> pointsToProject;
+                pointsToProject.push_back(Point3f(0, 0, 0)); // 世界坐标原点
+
+                vector<Point2f> projectedPoints;
+                projectPoints(pointsToProject, rvec, tvec, K, D, projectedPoints);
+
+                // 7. 在图像上画出投影点
+                Point2f p = projectedPoints[0];
+                circle(frame, p, 5, Scalar(0, 0, 255), -1);           // 红色实心圆
 
                 if (debug)
                 cout << "project: " << p << endl;
@@ -919,35 +980,72 @@ int main(void)
 
             last_track = true;
 
+            if (mode == 3) {
+                if (std::chrono::duration_cast<std::chrono::microseconds>(tp - mode3_last_tp).count() / 1e6 > 6.28/0.1/mode3_total_time) {
+                    step++;
+                }
+
+                mode3_last_tp = tp;
+
+                last_track = false;
+            }
+            else if (mode == 4) {
+                if (std::chrono::duration_cast<std::chrono::microseconds>(tp - mode3_last_tp).count() / 1e6 > totalInterpolationPoints/mode3_total_time) {
+                    step++;
+                }
+
+                mode3_last_tp = tp;
+
+                last_track = false;
+            }
+
             // if (mode == 1) {
-            //     if (sqrt(pow(target_laser(0), 2) + pow(target_laser(0), 2)) < same_point_threshold/10000.0f) {
+            //     // 检测按键
+            //     char key = static_cast<char>(cv::waitKey(1));
+            //     if (key == ' ' && last_key_pressed == false) {
             //         step++;
+            //         last_key_pressed = true;
+            //     }
+
+            //     if (key != ' ') {
+            //         last_key_pressed = false;
             //     }
             // }
-
-            if (mode == 1) {
-                // 检测按键
-                char key = static_cast<char>(cv::waitKey(1));
-                if (key == ' ' && last_key_pressed == false) {
-                    step++;
-                    last_key_pressed = true;
-                }
-
-                if (key != ' ') {
-                    last_key_pressed = false;
-                }
-            }
             
-            if (valid == 0) {
-                if (best_inner_corners.size() > 0)
-                {
-                    valid = 1;
-                }
+            if (mode == 0 || mode == 2 || mode == 3 || mode == 4) {
+                if (valid == 0) {
+                    if (best_inner_corners.size() > 0)
+                    {
+                        valid = 1;
+                    }
 
+                }
+                else if (valid == 1) {
+                    if (abs(yaw_error) < yaw_arrive_threshold && abs(pitch_error) < pitch_arrive_threshold) {
+                        valid = 2;
+                    }
+                }
             }
-            else if (valid == 1) {
-                if (abs(yaw_error) < yaw_arrive_threshold && abs(pitch_error) < pitch_arrive_threshold) {
-                    valid = 2;
+            else if (mode == 1) {
+                if (valid == 0) {
+                    yaw = mcu_data.cur_yaw;
+                    pitch = mode1_pitch;
+                    yaw_speed = 0;
+                    pitch_speed = 0;
+
+                    // 按下按键且pitch上电
+
+                }
+                else if (valid == 1) {
+                    if (best_inner_corners.size() > 0)
+                    {
+                        valid = 2;
+                    }
+                    else if (valid == 2) {
+                        if (abs(yaw_error) < yaw_arrive_threshold && abs(pitch_error) < pitch_arrive_threshold) {
+                            valid = 3;
+                        }
+                    }
                 }
             }
 
@@ -955,172 +1053,113 @@ int main(void)
         else {
             if (debug)
             cout << "no rect" << endl;
+
+            if (mode == 1) {
+                if (valid == 0) {
+                    yaw = mcu_data.cur_yaw;
+                    pitch = mode1_pitch;
+                    yaw_speed = 0;
+                    pitch_speed = 0;
+
+                    // 按下按键且pitch上电
+
+                }
+                else if (valid == 1) {
+                    if (std::chrono::duration_cast<std::chrono::microseconds>(tp - mode1_last_rotating_tp).count() / 1e6 > 0.1) {
+                        mode1_last_rotating_tp = tp;
+                        mode1_rotating_yaw += 6 * mode1_rotating_dir;
+                    }
+
+                    yaw = mode1_rotating_yaw;
+                    pitch = mode1_pitch;
+                    yaw_speed = 0;
+                    pitch_speed = 0;
+                }
+            }
         }
 
         circle(frame, cv::Point(K.at<double>(0, 2), K.at<double>(1, 2)), 1, Scalar(0, 0, 255), -1);
 
 
-        
-
-
-
-
-        // cv::Point2f target_center;
-        // double yaw;
-        // double pitch;
-
-        // // 3. 定义红色在 Lab 空间的阈值范围
-        // // Scalar lower_red = Scalar(red_lower_l, red_lower_a, red_lower_b);   // L, a, b 下限
-        // // Scalar upper_red = Scalar(red_upper_l, red_upper_a, red_upper_b); // L, a, b 上限
-
-        // Scalar lower_red = Scalar(purple_lower_l, purple_lower_a, purple_lower_b);   // L, a, b 下限
-        // Scalar upper_red = Scalar(purple_upper_l, purple_upper_a, purple_upper_b); // L, a, b 上限
-
-        // // 4. 使用 inRange 进行颜色阈值分割
-        // Mat mask_r;
-        // inRange(lab, lower_red, upper_red, mask_r);
-
-        // // 6. 查找轮廓
-        // vector<vector<Point>> contours_r;
-        // findContours(mask_r, contours_r, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
-
-        // Point centroid;
-        // vector<Point> filtered_contour;
-
-        // for (auto contour : contours_r) {
-        //     if (contourArea(contour) > 1) {
-        //         filtered_contour = contour;
-        //     }
-        // }
-
-
-        // if (filtered_contour.size() > 0) {
-        //     // 1. 计算矩
-        //     Moments m = moments(filtered_contour);
-
-        //     // 2. 计算质心坐标
-        //     if (m.m00 != 0) {
-        //         centroid.x = m.m10 / m.m00;
-        //         centroid.y = m.m01 / m.m00;
-        //     }
-
-        //     // 3. 打印结果
-        //     cout << "current coordinate: (" << centroid.x << ", " << centroid.y << ")" << endl; 
-        // }
-        
-        // drawContours(frame, contours_r, 0, Scalar(0, 255, 0), 2);
-        // circle(frame, centroid, 5, Scalar(0, 255, 0), 2);
-
-
-
-
-        // if (bestContour.size() > 0 && filtered_contour.size() > 0) {
-        //     // 获取矩形中心点
-        //     target_center = (bestContour[0]+bestContour[1]+bestContour[2]+bestContour[3])/4;
-
-        //     // 绘制矩形
-        //     for (int i = 0; i < 4; ++i)
-        //         cv::line(frame, bestContour[i], bestContour[(i+1)%4], cv::Scalar(0, 0, 255), 2);
-
-        //     // 显示中心点
-        //     cv::circle(frame, target_center, 5, cv::Scalar(0, 255, 0), -1);
-
-        //     std::cout << "Center of green object: (" << target_center.x << ", " << target_center.y << ")" << std::endl;
-
-        //     yaw = target_center.x - centroid.x;
-        //     pitch = target_center.y - centroid.y;
-
-        //     cout << "yaw: " << yaw << "pitch: " << pitch << endl;
-            
-        // }
-        // else {
-        //     std::cout << "No green object found!" << std::endl;
-        // }
-
-
-
-
-        // vector<int> rect_valid_indexes;
-        // vector<int> same_center_indexes;
-        // vector<int> white_valid_indexes;
-        // vector<int> area_valid_indexes;
-        // int best_index = -1;
-
-        // if (rect_valid_indexes.size() > 0) {
-        //     for (int i=0; i!=rect_valid_indexes.size(); i++)
-        //         drawContours(frame, contours, rect_valid_indexes[i], Scalar(0, 255, 0), 2);
-        // }
-
-        // if (same_center_indexes.size() > 0) {
-        //     for (int i=0; i!=rect_valid_indexes.size(); i++)
-
-        //         drawContours(frame, contours, same_center_indexes[i], Scalar(0, 255, 0), 2);
-        // }
-
-        // if (white_valid_indexes.size() > 0) {
-        //     for (int i=0; i!=rect_valid_indexes.size(); i++)
-
-        //         drawContours(frame, contours, white_valid_indexes[i], Scalar(0, 255, 0), 2);
-        // }
-
-        // if (area_valid_indexes.size() > 0) {
-        //     for (int i=0; i!=rect_valid_indexes.size(); i++)
-
-        //         drawContours(frame, contours, area_valid_indexes[i], Scalar(0, 255, 0), 2);
-        // }
 
         if (best_index > 0) {
             drawContours(frame, contours, best_index, Scalar(255, 0, 0), 2);
         }
 
-        cv::imshow("Original", frame);
-        cv::imshow("mask", mask);
-        // cv::imshow("binary", binary);
-        // cv::imshow("Green Mask", blurred);
-        cv::waitKey(1);
-
-
-        
-
-
-        // 检查是否需要停止程序
-        // if (temp == true) {
-        //     std::cout << "Stopping the program." << std::endl;
-        //     break; // 退出循环，从而结束程序
-        // }
-
-
-
-        // show picture
-        // 在原图上画出ROI区域的框
-        // if (display["predic_show"]) {
-        //     cv::imshow("Camera Feed", frame);
-
-        //     cv::waitKey(1);
-        // }
-
+        if (show) {
+            cv::imshow("Original", frame);
+            cv::imshow("mask", mask);
+            // cv::imshow("binary", binary);
+            // cv::imshow("Green Mask", blurred);
+            cv::waitKey(1);
+        }
 
         
 
         // cboard communication
         if (imu != nullptr && imu->is_open())
         {
-            imu->transmit_cmd(
-                valid,
+            if (mode == 1 && valid == 0) {
+                imu->transmit_cmd(
+                1,
                 yaw,
                 pitch,
                 yaw_speed/180.0f*M_PI,
-                pitch_speed/180.0f*M_PI
+                pitch_speed/180.0f*M_PI,
+                mode
                 );
 
-            if (debug)
-            LOGM_S("[transmit] status:%d | x_error:%f | y_error:%f | yaw_s:%f | pitch_s:%f",
+                if (debug)
+                LOGM_S("[transmit] status:%d | x_error:%f | y_error:%f | yaw_s:%f | pitch_s:%f | mode:%d",
+                    1,
+                    yaw,
+                    pitch,
+                    yaw_speed/180.0f*M_PI,
+                    pitch_speed/180.0f*M_PI,
+                    mode
+                    );
+            }
+            else if (mode == 3 || mode == 4) {
+                imu->transmit_cmd(
                 valid,
                 yaw,
                 pitch,
                 yaw_speed/180.0f*M_PI,
-                pitch_speed/180.0f*M_PI
+                pitch_speed/180.0f*M_PI,
+                2
                 );
+
+                if (debug)
+                LOGM_S("[transmit] status:%d | x_error:%f | y_error:%f | yaw_s:%f | pitch_s:%f | mode:%d",
+                    valid,
+                    yaw,
+                    pitch,
+                    yaw_speed/180.0f*M_PI,
+                    pitch_speed/180.0f*M_PI,
+                    2
+                    );
+            }
+            else {
+                imu->transmit_cmd(
+                valid,
+                yaw,
+                pitch,
+                yaw_speed/180.0f*M_PI,
+                pitch_speed/180.0f*M_PI,
+                mode
+                );
+
+                if (debug)
+                LOGM_S("[transmit] status:%d | x_error:%f | y_error:%f | yaw_s:%f | pitch_s:%f | mode:%d",
+                    valid,
+                    yaw,
+                    pitch,
+                    yaw_speed/180.0f*M_PI,
+                    pitch_speed/180.0f*M_PI,
+                    mode
+                    );
+            }
+
 
         }
 

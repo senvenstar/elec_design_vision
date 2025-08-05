@@ -58,7 +58,8 @@ void UartIMU::transmit_cmd(uint8_t valid_,
     float yaw_error_,
     float pitch_error_,
     float yaw_speed_,
-    float pitch_speed_)
+    float pitch_speed_,
+    int mode_)
 {
     advv_detection_t data_to_send;
     data_to_send.valid = valid_;
@@ -66,6 +67,7 @@ void UartIMU::transmit_cmd(uint8_t valid_,
     data_to_send.pitch_error = pitch_error_;
     data_to_send.yaw_speed = yaw_speed_;
     data_to_send.pitch_speed = pitch_speed_;
+    data_to_send.mode = mode_;
     
     m_serial.send(GIMAdvv_CMD_ID, (drivers::packet_data_t*)&data_to_send, sizeof(data_to_send));
 }

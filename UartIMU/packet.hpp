@@ -14,6 +14,7 @@ typedef struct __attribute__((packed))
     float pitch_error;
     float yaw_speed;
     float pitch_speed;
+    int mode;
 } advv_detection_t;
 
 

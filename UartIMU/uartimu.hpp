@@ -44,7 +44,8 @@ public:
     float yaw_error_,
     float pitch_error_,
     float yaw_speed_,
-    float pitch_speed_);
+    float pitch_speed_,
+    int mode_);
     void get_attitude(Attitude &attitude)
     {
         attitude = m_attitude;
